@@ -1,0 +1,23 @@
+# API Key - do not commit
+api_key.txt
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# 用户数据（隐私，保留目录内的代码文件）
+memory/*.json
+sessions/
+feedback/*.json
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
