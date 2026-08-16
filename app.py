@@ -473,15 +473,22 @@ def sessions_api():
 # ── 记忆管理 API ────────────────────────────────────────────────
 @app.route('/api/memory', methods=['GET', 'DELETE'])
 def memory_api():
-    """GET: 查看记忆  DELETE: 清空记忆。"""
+    """GET: 查看记忆（仅非空字段）  DELETE: ?key=xxx 删单条，无 key 清空全部。"""
     session_id = request.args.get('session_id', 'default')
     if request.method == 'GET':
         user = _mm.get_or_create_user(session_id)
-        user.pop('user_id', None)
-        return jsonify({'session_id': session_id, 'user': user})
+        # 仅返回非空字段（前端 loadMemories 读取 data.memories）
+        memories = {k: v for k, v in user.items()
+                    if k != 'user_id' and v not in ('', [], None)}
+        return jsonify({'session_id': session_id, 'memories': memories})
     elif request.method == 'DELETE':
-        # 重置用户数据
-        _mm.update_user(session_id, name='', preferences='', health_info='', conversation_history=[])
+        key = request.args.get('key', '')
+        if key:
+            if not _mm.delete_user_field(session_id, key):
+                return jsonify({'error': '记忆条目不存在'}), 404
+            return jsonify({'ok': True, 'deleted': key})
+        # 无 key：清空全部（前端"清除全部记忆"按钮走这里）
+        _mm.clear_user(session_id)
         return jsonify({'ok': True, 'cleared': True})
 
 
