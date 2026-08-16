@@ -46,7 +46,11 @@ def get_or_create_user(user_id: str) -> dict:
 def update_user(user_id: str, **kwargs) -> dict:
     """更新用户字段（name / preferences / health_info 等）。"""
     all_data = _load_all()
-    user = all_data.get(user_id, get_or_create_user(user_id))
+    if user_id not in all_data:
+        # 避免 .get() 默认参数被急切求值导致新建用户后写回旧快照（清空记录）
+        get_or_create_user(user_id)
+        all_data = _load_all()
+    user = all_data[user_id]
     for k, v in kwargs.items():
         if k in user:
             if v:  # 非空才更新
@@ -59,7 +63,10 @@ def update_user(user_id: str, **kwargs) -> dict:
 def add_conversation(user_id: str, summary: str):
     """添加对话摘要，保留最近 5 条。"""
     all_data = _load_all()
-    user = all_data.get(user_id, get_or_create_user(user_id))
+    if user_id not in all_data:
+        get_or_create_user(user_id)
+        all_data = _load_all()
+    user = all_data[user_id]
     user['conversation_history'].append(summary)
     user['conversation_history'] = user['conversation_history'][-5:]
     user['last_seen'] = datetime.now().isoformat()
