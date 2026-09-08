@@ -7,6 +7,7 @@ __pycache__/
 venv/
 .env
 .pytest_cache/
+.ruff_cache/
 
 # IDE
 .vscode/
@@ -16,8 +17,12 @@ venv/
 memory/*.json
 sessions/
 feedback/*.json
+cost/
 *.db
 
 # OS
 .DS_Store
 Thumbs.db
+
+# 评测运行产物（评测集/评分标准/引擎入库，生成的 runs/ 不入库）
+eval/runs/

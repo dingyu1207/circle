@@ -1,0 +1,9 @@
+# pre-commit 钩子：提交前自动格式化 + lint（自动修复）
+# 手动全量检查：pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.3
+    hooks:
+      - id: ruff
+        args: [--fix]          # 自动修复可修复的 lint 问题
+      - id: ruff-format        # 统一代码格式（基于 ruff 的格式化器）

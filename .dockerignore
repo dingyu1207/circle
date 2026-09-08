@@ -1,0 +1,23 @@
+# 缓存与版本控制
+__pycache__/
+*.pyc
+.git
+.pytest_cache/
+.ruff_cache/
+
+# 虚拟环境与密钥（严禁进入镜像）
+venv/
+.env
+api_key.txt
+
+# 测试
+tests/
+
+# 用户数据（隐私，仅保留目录内的代码文件）
+memory/*.json
+sessions/*.json
+feedback/*.json
+cost/*.json
+
+# 评测运行产物（引擎/评测集入库，生成的 runs/ 不入镜像）
+eval/runs/

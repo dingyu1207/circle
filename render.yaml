@@ -1,0 +1,16 @@
+# Render Blueprint：把仓库推到 GitHub 后，
+# 在 Render 控制台 "New + → Blueprint" 连接仓库即可一键创建本服务。
+# 前提：根目录 Dockerfile 已配好（gunicorn 生产启动 + $PORT）。
+#
+# 创建时 Render 会让你填 DEEPSEEK_API_KEY（sync: false = 不写死在蓝图里）。
+# 免费实例 15 分钟无访问会休眠、冷启动约 30-60s；保持在线需 $7/月 或定时自 ping。
+services:
+  - type: web
+    name: circle
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DEEPSEEK_API_KEY
+        sync: false

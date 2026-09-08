@@ -1,0 +1,35 @@
+# Circle 持续集成：push / pull_request 到 main 时自动运行测试。
+# 说明：CI 环境不提供真实 API Key，测试套件全部通过 mock 外部调用，
+# 不依赖联网。若未来新增需要真实调用的用例，用 @pytest.mark.real_api
+# 标记即可被 CI 跳过（标记已在 pytest.ini 注册）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        # 测试依赖（pytest 等）已拆到 requirements-dev.txt，故两者都装
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest tests/ -q
