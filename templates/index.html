@@ -5,22 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Circle - 你的生活伙伴</title>
 <style>
-  /* ── CSS 变量（暖色调） ── */
+  /* ── CSS 变量（低饱和度蓝白） ── */
   :root {
-    --primary: #E8734A;
-    --primary-dark: #D4603A;
-    --primary-light: #FFF0EB;
-    --bg: #FFF8F5;
+    --primary: #7BA6C9;
+    --primary-dark: #5D8AAF;
+    --primary-light: #E8F0F7;
+    --bg: #F5F7FA;
     --surface: #FFFFFF;
-    --text: #4A3728;
-    --text-secondary: #8B7355;
-    --border: #F0E0D6;
-    /* 气泡配色：用户灰、Circle 暖杏（弱化对比，更柔和） */
-    --user-bubble: #ECE7E3;
-    --user-text: #4A3728;
-    --bot-bubble: #FFE9DC;
-    --bot-text: #4A3728;
-    --shadow: 0 2px 12px rgba(74, 55, 40, 0.08);
+    --text: #1F2937;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    /* 气泡配色：用户浅灰蓝、Circle 浅蓝 */
+    --user-bubble: #F3F4F6;
+    --user-text: #1F2937;
+    --bot-bubble: #E8F0F7;
+    --bot-text: #1F2937;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     --radius: 18px;
     --chat-max: 800px;        /* 桌面端聊天内容最大宽度 */
   }
@@ -30,7 +30,7 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
       "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #FFF0EB 0%, #FFF8F5 30%, #FFF5F0 100%);
+    background: linear-gradient(135deg, #E8F0F7 0%, #F5F7FA 30%, #F0F2F5 100%);
     color: var(--text);
     height: 100dvh;
     display: flex;
@@ -41,54 +41,63 @@
 
   /* ── 响应式容器 ── */
   .app-container {
-    width: 100%; max-width: 100%; height: 100dvh;
+    width: 100%; height: 100dvh;
     display: flex; flex-direction: column;
     background: var(--bg); overflow: hidden;
   }
-  /* 平板（≥768px）：95% 宽度卡片 */
+  /* 平板（≥768px）：容器占满视口，不做卡片 */
   @media (min-width: 768px) {
     .app-container {
-      width: 95%; max-width: 1000px;
-      height: 94dvh; max-height: 900px;
-      border-radius: 24px;
-      box-shadow: 0 8px 40px rgba(74,55,40,0.12);
+      max-width: 100%;
+      border-radius: 0;
+      box-shadow: none;
     }
   }
-  /* 桌面（≥1024px）：更宽容器，内部聊天区限宽 800px 居中 */
-  @media (min-width: 1024px) {
-    .app-container { max-width: 1120px; height: 92dvh; max-height: 920px; }
+  /* 桌面（≥1200px）：卡片式，居中展示 */
+  @media (min-width: 1200px) {
+    .app-container {
+      width: 96%; max-width: 1280px;
+      height: 94dvh; max-height: 960px;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    }
   }
 
   /* ── 侧边栏 + 主内容布局 ── */
-  .body-wrap { flex: 1; display: flex; overflow: hidden; }
+  .body-wrap { position: relative; flex: 1; display: flex; overflow: hidden; }
   .sidebar {
     width: 240px; flex-shrink: 0;
-    background: #FFF7F2; border-right: 1px solid var(--border);
+    background: #F3F5F8; border-right: 1px solid var(--border);
     display: none; flex-direction: column; overflow-y: auto;
   }
-  /* 桌面端：侧边栏常驻显示 */
-  @media (min-width: 1024px) {
+  /* 桌面端（≥1200px）：侧边栏常驻显示 */
+  @media (min-width: 1200px) {
     .sidebar { display: flex; }
   }
-  .sidebar .sidebar-header { padding: 12px; border-bottom: 1px solid var(--border); }
+  .sidebar .sidebar-header { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
   .sidebar .new-chat-btn {
-    width: 100%; padding: 8px; border-radius: 10px;
-    border: 1.5px dashed var(--primary); background: var(--primary-light);
-    color: var(--primary-dark); font-size: 14px; cursor: pointer; transition: background 0.2s;
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: none; background: linear-gradient(135deg, #7BA6C9 0%, #9ABFDF 100%);
+    color: #FFF; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(123, 166, 201, 0.2);
   }
-  .sidebar .new-chat-btn:hover { background: #FFE8DC; }
+  .sidebar .new-chat-btn:hover { background: linear-gradient(135deg, #5D8AAF 0%, #7BA6C9 100%); box-shadow: 0 4px 12px rgba(123, 166, 201, 0.3); transform: translateY(-1px); }
+  .sidebar .new-chat-btn:active { transform: translateY(0); }
   .sidebar .session-list { flex: 1; overflow-y: auto; padding: 6px; }
   .sidebar .session-item {
     padding: 10px 12px; border-radius: 10px; cursor: pointer;
     margin-bottom: 4px; transition: background 0.15s;
   }
   .sidebar .session-item:hover { background: var(--primary-light); }
+  .sidebar .session-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .sidebar .session-item.active { background: var(--primary-light); font-weight: 600; }
   .sidebar .session-item .sess-title { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sidebar .session-item .sess-time { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
   .sidebar .session-item .sess-del { float: right; background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; padding: 0 4px; visibility: hidden; }
   .sidebar .session-item:hover .sess-del { visibility: visible; }
   .sidebar .session-item .sess-del:hover { color: #E74C3C; }
+  /* 历史会话为空时的提示 */
+  .sidebar .sess-empty { padding: 24px 12px; text-align: center; color: var(--text-secondary); font-size: 13px; }
   .chat-column { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
   /* 汉堡按钮：移动/平板端显示，桌面端隐藏 */
   .sidebar-toggle {
@@ -96,19 +105,48 @@
     background: none; border: none; font-size: 20px; cursor: pointer;
     color: #FFF; padding: 2px 6px;
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .sidebar-toggle { display: none; }
   }
   /* 移动/平板端：侧边栏改为抽屉 */
-  @media (max-width: 1023px) {
+  @media (max-width: 1199px) {
     .sidebar.open { display: flex; position: fixed; left: 0; top: 0; bottom: 0; z-index: 200; width: 260px; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 199; }
     .sidebar-overlay.show { display: block; }
   }
 
+  /* ── 侧边栏收起 / 展开（桌面端 ≥1200px） ── */
+  .side-collapse {
+    display: none;
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--border);
+    color: var(--primary-dark); font-size: 16px;
+    border-radius: 10px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .side-collapse:hover { background: #FFF; }
+  .side-rail { display: none; }
+  .sidebar .sidebar-header .new-chat-btn { flex: 1; width: auto; }
+  @media (min-width: 1200px) {
+    .side-collapse { display: inline-flex; }
+    .app-container.sidebar-hidden .sidebar { display: none; }
+    .app-container.sidebar-hidden .side-rail {
+      display: flex; align-items: center; justify-content: center;
+      position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #FFF; border: 1px solid var(--border);
+      color: var(--primary-dark); font-size: 13px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10); z-index: 6; padding: 0;
+    }
+    .side-rail:hover { background: var(--primary-light); }
+  }
+
+
   /* ── 顶部 Header（移动端紧凑，节省空间） ── */
   .header {
-    background: linear-gradient(135deg, #E8734A 0%, #F49B6E 100%);
+    background: linear-gradient(135deg, #7BA6C9 0%, #9ABFDF 100%);
     color: #FFF;
     padding: 10px 12px 8px;
     text-align: center;
@@ -123,7 +161,7 @@
   }
   .header .logo .dot {
     width: 8px; height: 8px;
-    background: #FFD6A5;
+    background: #C8DAE9;
     border-radius: 50%;
     display: inline-block;
   }
@@ -182,15 +220,32 @@
     .chat-area { padding: 16px 18px; gap: 12px; }
   }
   /* 桌面端：聊天内容限宽 800px 居中，左右留白 */
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .chat-area { width: 100%; max-width: var(--chat-max); margin-left: auto; margin-right: auto; }
   }
+
+  /* ── 当前话题标题条：顶部居中，显示正在聊的题目 ── */
+  .topic-bar {
+    display: none; justify-content: center; align-items: center;
+    padding: 12px 12px 0; flex-shrink: 0;
+  }
+  .topic-bar.show { display: flex; }
+  .topic-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    max-width: 100%; padding: 5px 16px;
+    border-radius: 999px;
+    background: #FFF; border: 1px solid var(--border);
+    color: var(--primary-dark); font-size: 13px;
+    box-shadow: 0 1px 4px rgba(93, 138, 175, 0.10);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
 
   /* ── 欢迎消息 ── */
   .welcome { text-align: center; padding: 20px 10px 12px; }
   .welcome h2 { font-size: 20px; color: var(--primary); margin-bottom: 8px; }
   .welcome p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .welcome { padding: 32px 10px 16px; }
     .welcome h2 { font-size: 24px; }
     .welcome p { font-size: 16px; }
@@ -200,7 +255,7 @@
   .quick-chips {
     display: flex; align-items: center; gap: 6px;
     padding: 6px 10px;
-    overflow-x: auto; flex-wrap: nowrap;            /* 单行横向滚动，节省空间 */
+    overflow-x: auto; flex-wrap: wrap;            /* 多行换行：窄屏自动折行，所有快捷入口始终可见 */
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     flex-shrink: 0;
@@ -213,7 +268,7 @@
     flex-shrink: 0; white-space: nowrap;
   }
   .quick-chip {
-    background: #F5F0EC;                            /* 浅灰杏，不抢眼 */
+    background: #F3F5F8;                            /* 浅灰蓝，不抢眼 */
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 4px 10px;
@@ -228,7 +283,8 @@
     border-color: var(--primary);
     color: var(--primary-dark);
   }
-  @media (min-width: 1024px) {
+  .quick-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  @media (min-width: 1200px) {
     .quick-chips {
       width: 100%; max-width: var(--chat-max);
       margin-left: auto; margin-right: auto;
@@ -269,7 +325,7 @@
     border-bottom-left-radius: 6px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .message { max-width: 75%; }
     .message .bubble { font-size: 15.5px; padding: 12px 16px; }
   }
@@ -293,7 +349,7 @@
   }
 
   /* ── 思考气泡 ── */
-  .think-bubble { background: var(--primary-light); color: var(--primary-dark); border: 1.5px solid rgba(232,115,74,0.25); transition: opacity 0.2s; }
+  .think-bubble { background: var(--primary-light); color: var(--primary-dark); border: 1.5px solid rgba(123,166,201,0.25); transition: opacity 0.2s; }
   .think-error { background: #FFF0F0; color: #C0392B; border-color: rgba(192,57,43,0.2); }
 
   /* ── 打字机光标 ── */
@@ -322,9 +378,9 @@
   }
   .input-area textarea:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(232, 115, 74, 0.1);
+    box-shadow: 0 0 0 3px rgba(123, 166, 201, 0.15);
   }
-  .input-area textarea::placeholder { color: #C4B5A8; }
+  .input-area textarea::placeholder { color: #AAAAAA; }
 
   /* 按钮：手机端统一 ≥44px，便于手指点击 */
   .send-btn, .upload-btn, .clear-file-btn {
@@ -335,7 +391,7 @@
   .send-btn { background: var(--primary); color: #FFF; font-size: 20px; }
   .send-btn:hover { background: var(--primary-dark); }
   .send-btn:active { transform: scale(0.92); }
-  .send-btn:disabled { background: #DDB5A5; cursor: not-allowed; }
+  .send-btn:disabled { background: #D6DEE6; cursor: not-allowed; }
 
   /* ── 上传 / 清除按钮 ── */
   .upload-btn { border: 1.5px solid var(--border); background: var(--surface); font-size: 16px; }
@@ -343,7 +399,7 @@
   .clear-file-btn { border: 1.5px solid #F5C6CB; background: #FFF0F0; color: #E74C3C; font-size: 16px; }
   .clear-file-btn:hover { background: #FFE0E0; }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1200px) {
     .input-area { width: 100%; max-width: var(--chat-max); margin-left: auto; margin-right: auto; padding: 12px 4px; }
     .upload-btn, .clear-file-btn { width: 40px; height: 40px; }
     .send-btn { width: 42px; height: 42px; }
@@ -467,6 +523,7 @@
   }
   .mem-modal .mem-actions .mem-clear { color: #E74C3C; border-color: #F5C6CB; }
   .mem-modal .mem-actions .mem-close { color: var(--text); }
+  .mem-modal .mem-modal-note { margin: 14px 0 2px; font-size: 11.5px; color: var(--text-secondary); text-align: center; line-height: 1.6; }
 
   /* ── 错误消息 ── */
   .error-msg {
@@ -477,6 +534,42 @@
     border-radius: 12px;
     font-size: 13px;
   }
+  /* ── 参考来源 chip（知识库出处 / 网页可点来源） ── */
+  .refs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; padding-left: 2px; }
+  .refs-label { font-size: 11px; color: var(--text-secondary); flex-shrink: 0; }
+  .ref-chip { font-size: 11px; line-height: 1.5; color: var(--primary-dark); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px 9px; transition: all 0.15s; }
+  .ref-chip:hover { background: var(--primary-light); border-color: var(--primary); }
+  .ref-chip.ref-link { text-decoration: none; cursor: pointer; }
+  .ref-chip.ref-link:hover { text-decoration: underline; }
+  .message.bot .trunc-note { margin-top: 6px; font-size: 12px; color: var(--text-secondary); font-style: italic; }
+
+  /* ── 首页「Circle 记得你」便签（有记忆才显示；单行、紧凑、居中） ── */
+  .mem-card {
+    display: none;
+    align-items: center; gap: 6px;
+    vertical-align: middle;
+    margin-top: 14px;
+    max-width: min(100%, 480px);
+    padding: 6px 6px 6px 14px;
+    border-radius: 999px;
+    background: #EFF5FB;
+    border: 1px solid #D9E7F2;
+    box-shadow: 0 1px 3px rgba(93, 138, 175, 0.10);
+    box-sizing: border-box;
+    animation: fadeInUp 0.3s ease;
+  }
+  .mem-card .mem-ic { font-size: 15px; line-height: 1; flex-shrink: 0; }
+  .mem-card .mem-title { font-size: 12.5px; font-weight: 700; color: var(--primary-dark); white-space: nowrap; flex-shrink: 0; letter-spacing: 0.2px; }
+  .mem-card .mem-body { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mem-card .mem-manage-btn { flex-shrink: 0; background: none; border: none; padding: 4px 10px; border-radius: 999px; font-size: 12px; color: var(--primary-dark); cursor: pointer; transition: background 0.15s; }
+  .mem-card .mem-manage-btn:hover { background: var(--primary-light); }
+
+  /* ── 移动端/触屏：会话删除按钮常驻可见（hover 在触屏上不存在） ── */
+  .sidebar .session-item .sess-del:focus-visible { visibility: visible; opacity: 1; }
+  @media (hover: none) {
+    .sidebar .session-item .sess-del { visibility: visible; opacity: 0.45; padding: 4px 8px; }
+    .sidebar .session-item .sess-del:active { opacity: 1; color: #E74C3C; }
+  }
 </style>
 </head>
 <body>
@@ -484,62 +577,76 @@
 <div class="app-container">
   <!-- Header -->
   <div class="header">
-    <button class="sidebar-toggle" id="sidebarToggle" title="对话列表">☰</button>
-    <button class="back-btn" id="backBtn" title="返回首页">← 返回</button>
+    <button class="sidebar-toggle" id="sidebarToggle" title="对话列表" aria-label="打开对话列表">☰</button>
+    <button class="back-btn" id="backBtn" title="返回首页" aria-label="返回首页">← 返回</button>
     <div class="logo"><span class="dot"></span> Circle <span class="dot"></span></div>
     <div class="tagline">你的生活伙伴 · 温暖陪伴每一天</div>
-    <button class="mem-btn" id="memBtn" title="查看我的记忆">🧠</button>
+    <button class="mem-btn" id="memBtn" title="查看我的记忆" aria-label="查看我的记忆">🧠</button>
   </div>
   <!-- 用户状态指示器 -->
   <div class="user-status" id="userStatus">🌱 Circle 正在了解你</div>
 
   <!-- 侧边栏 + 主内容 -->
   <div class="body-wrap">
+    <button class="side-rail" id="sideRail" title="展开侧边栏" aria-label="展开侧边栏" type="button">☰</button>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <button class="new-chat-btn" id="newChatBtn">＋ 新建对话</button>
+        <button class="new-chat-btn" id="newChatBtn" aria-label="新建对话">＋ 新建对话</button>
+        <button class="side-collapse" id="sideCollapse" title="收起侧边栏" aria-label="收起侧边栏" type="button">‹</button>
       </div>
       <div class="session-list" id="sessionList"></div>
     </div>
     <div class="chat-column">
+      <!-- 当前话题标题条：顶部居中显示正在聊的题目 -->
+      <div class="topic-bar" id="topicBar">
+        <span class="topic-pill"><span id="topicText"></span></span>
+      </div>
       <!-- 聊天区域 -->
       <div class="chat-area" id="chatArea">
         <div class="welcome" id="welcomeBlock">
           <h2>🌸 你好，我是 Circle</h2>
-          <p>你的生活伙伴。烹饪灵感、清洁妙招、<br>健康护理、情绪关怀……我都在这里。<br>有什么想聊的吗？</p>
+          <p>你的生活伙伴。烹饪灵感、清洁妙招、<br>健康护理、理财、情绪关怀……我都在这里。<br>有什么想聊的吗？</p>
+          <div class="mem-card" id="memCard" title="记忆仅保存在本地，Circle 用它来更好地了解你">
+            <span class="mem-ic" aria-hidden="true">🧠</span>
+            <span class="mem-title">Circle 记得你</span>
+            <span class="mem-body" id="memCardBody" aria-live="polite"></span>
+            <button class="mem-manage-btn" id="memCardManage" type="button">管理</button>
+          </div>
         </div>
       </div>
       <!-- 快捷话题：弱化的小标签，置于输入框上方，辅助而非主视觉 -->
-      <div class="quick-chips" id="quickChips">
+      <div class="quick-chips" id="quickChips" role="group" aria-label="快捷话题">
         <span class="chips-label">试试问：</span>
-        <span class="quick-chip" data-topic="经期护理" data-greeting="好的，我在这里陪你聊经期相关的话题～痛经怎么缓解、周期不规律怎么办、经前情绪波动……你有什么具体想了解的吗？">🩸 经期护理</span>
-        <span class="quick-chip" data-topic="烹饪饮食" data-greeting="好呀，让我们一起探索厨房的乐趣！想学一道简单的家常菜、了解调味技巧、还是找找省时的备菜方法？告诉我你想吃什么或者想学什么～">🍳 学做菜</span>
-        <span class="quick-chip" data-topic="居家健身" data-greeting="动起来就是最好的开始！你想了解瑜伽拉伸、居家力量训练、还是适合经期的温和运动？告诉我你的运动基础和想要的目标，我来帮你搭配～">💪 居家健身</span>
-        <span class="quick-chip" data-topic="清洁收纳" data-greeting="没问题，家务这件事我有不少心得～厨房油污怎么清理、衣物污渍怎么去、怎么让家人一起分担……你想聊哪个方向？">🧹 清洁妙招</span>
-        <span class="quick-chip" data-topic="情绪关怀" data-greeting="来，先深呼吸一下 🫂 不管是因为什么感到低落或焦虑，我都在这里听着。你想聊聊最近发生了什么，还是想找一些让自己平静下来的方法？">💬 情绪关怀</span>
+        <span class="quick-chip" data-topic="经期护理" data-greeting="好的，我在这里陪你聊经期相关的话题～痛经怎么缓解、周期不规律怎么办、经前情绪波动……你有什么具体想了解的吗？" role="button" tabindex="0" aria-label="经期护理话题">🩸 经期护理</span>
+        <span class="quick-chip" data-topic="烹饪饮食" data-greeting="好呀，让我们一起探索厨房的乐趣！想学一道简单的家常菜、了解调味技巧、还是找找省时的备菜方法？告诉我你想吃什么或者想学什么～" role="button" tabindex="0" aria-label="学做菜话题">🍳 学做菜</span>
+        <span class="quick-chip" data-topic="居家健身" data-greeting="动起来就是最好的开始！你想了解瑜伽拉伸、居家力量训练、还是适合经期的温和运动？告诉我你的运动基础和想要的目标，我来帮你搭配～" role="button" tabindex="0" aria-label="居家健身话题">💪 居家健身</span>
+        <span class="quick-chip" data-topic="清洁收纳" data-greeting="没问题，家务这件事我有不少心得～厨房油污怎么清理、衣物污渍怎么去、怎么让家人一起分担……你想聊哪个方向？" role="button" tabindex="0" aria-label="清洁妙招话题">🧹 清洁妙招</span>
+        <span class="quick-chip" data-topic="理财" data-greeting="理财是给自己的人生多一份底气～从哪聊起都可以：理财入门怎么开始、基金定投是什么、怎么识别理财诈骗、养老怎么提前规划，或者怎么挑适合自己的稳健产品。告诉我你的情况，我帮你把财务规划捋清楚～" role="button" tabindex="0" aria-label="理财话题">💰 理财</span>
+        <span class="quick-chip" data-topic="情绪关怀" data-greeting="来，先深呼吸一下 🫂 不管是因为什么感到低落或焦虑，我都在这里听着。你想聊聊最近发生了什么，还是想找一些让自己平静下来的方法？" role="button" tabindex="0" aria-label="情绪关怀话题">💬 情绪关怀</span>
       </div>
       <!-- 底部输入区 -->
       <div class="input-area">
         <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.md" style="display:none">
-        <button class="upload-btn" id="uploadBtn" title="上传文件">📎</button>
-        <button class="clear-file-btn" id="clearFileBtn" title="清除已上传的文件" style="display:none">✕</button>
-        <textarea id="userInput" rows="1" placeholder="和 Circle 聊聊..."></textarea>
-        <button class="send-btn" id="sendBtn" title="发送">➤</button>
+        <button class="upload-btn" id="uploadBtn" title="上传文件" aria-label="上传文件">📎</button>
+        <button class="clear-file-btn" id="clearFileBtn" title="清除已上传的文件" style="display:none" aria-label="清除已上传的文件">✕</button>
+        <textarea id="userInput" rows="1" placeholder="和 Circle 聊聊..." aria-label="输入消息"></textarea>
+        <button class="send-btn" id="sendBtn" title="发送" aria-label="发送消息">➤</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- 记忆管理弹窗 -->
-<div class="mem-overlay" id="memOverlay">
+<div class="mem-overlay" id="memOverlay" role="dialog" aria-modal="true" aria-labelledby="memTitle" aria-hidden="true">
   <div class="mem-modal">
-    <h3>🧠 Circle 记得关于你的事</h3>
+    <h3 id="memTitle">🧠 Circle 记得关于你的事</h3>
     <div id="memList"><div class="mem-empty">加载中...</div></div>
     <div class="mem-actions">
-      <button class="mem-clear" id="memClear">清除全部记忆</button>
-      <button class="mem-close" id="memClose">关闭</button>
+      <button class="mem-clear" id="memClear" aria-label="清除全部记忆">清除全部记忆</button>
+      <button class="mem-close" id="memClose" aria-label="关闭弹窗">关闭</button>
     </div>
+    <p class="mem-modal-note">🔒 记忆仅保存在本地，Circle 用它来更好地了解你</p>
   </div>
 </div>
 
@@ -582,6 +689,20 @@ let thinkInterval = null;
 let thinkTimeout = null;
 let lastQA = { q: '', a: '' };
 let currentSessionId = null;  // 当前对话会话 ID
+const TOPIC_LABELS = {
+  '经期护理': '🩸 经期护理', '烹饪饮食': '🍳 学做菜', '居家健身': '💪 居家健身',
+  '清洁收纳': '🧹 清洁妙招', '理财': '💰 理财', '情绪关怀': '💬 情绪关怀',
+};
+let activeTitle = '';          // 自由聊会话的标题（首问提炼）
+let newSessionTitle = null;      // 本次新会话的首问，等回答完成后写回标题条
+const topicBar = document.getElementById('topicBar');
+const topicText = document.getElementById('topicText');
+function showTopicBar(text) {
+  if (!text) { topicBar.classList.remove('show'); return; }
+  topicText.textContent = text;
+  topicBar.classList.add('show');
+}
+const clipTitle = t => { const s = (t || '').trim(); return s ? (s.length > 20 ? s.slice(0, 20) + '…' : s) : ''; };
 
 // ── 工具函数 ──
 function scrollToBottom() {
@@ -594,15 +715,35 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-/** 简单渲染 bot 消息：处理粗体、换行、规划标记 */
+function escapeAttr(text) {
+  return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/[<>]/g, char => `&#${char.charCodeAt(0)};`);
+}
+
+/** 简单渲染 bot 消息：支持段落、列表（1. / - / • ）、粗体、规划标记 */
 function renderBotContent(text) {
-  let html = escapeHtml(text);
+  let esc = escapeHtml(text);
   // 规划标记高亮：【任务拆解】【第N步】【总结】
-  html = html.replace(/【(任务拆解|第\d+步|总结)】/g, '<span class="plan-title">【$1】</span>');
+  esc = esc.replace(/【(任务拆解|第\d+步|总结)】/g, '<span class="plan-title">【$1】</span>');
   // **粗体**
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // 换行
-  html = html.replace(/\n/g, '<br>');
+  esc = esc.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 逐行处理：连续的「- / • / 1.」开头行合并为 <ul> 列表，其余保留
+  let html = '';
+  let inList = false;
+  const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+  const endsBlock = () => html === '' || html.endsWith('<br>') || html.endsWith('</ul>');
+  for (const raw of esc.split('\n')) {
+    const m = raw.match(/^\s*[-•*]\s+(.*)$/) || raw.match(/^\s*\d+[.)、]\s+(.*)$/);
+    if (m) {
+      if (!inList) { if (!endsBlock()) html += '<br>'; html += '<ul>'; inList = true; }
+      html += '<li>' + m[1] + '</li>';
+    } else {
+      closeList();
+      if (raw.trim() === '') { html += '<br><br>'; }   // 空行 = 段落间距
+      else { if (!endsBlock()) html += '<br>'; html += raw; }
+    }
+  }
+  closeList();
+  html = html.replace(/(<br>)+$/, '');   // 裁掉结尾多余换行
   return html;
 }
 
@@ -718,30 +859,6 @@ function stopThinking(errorMsg) {
   el.remove();
 }
 
-function typewriterReply(text) {
-  const div = document.createElement('div');
-  div.className = 'message bot';
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  div.appendChild(bubble);
-  chatArea.appendChild(div);
-
-  let i = 0;
-  const speed = 45 + Math.random() * 15;  // 40-60ms，更像人在说话
-  function type() {
-    if (i < text.length) {
-      bubble.textContent = text.slice(0, i + 1);
-      i++;
-      scrollToBottom();
-      thinkTimeout = setTimeout(type, speed);
-    } else {
-      bubble.innerHTML = renderBotContent(text);
-      attachFeedback(div);  // 打字完成后附加反馈按钮
-    }
-  }
-  type();
-}
-
 // ── 反馈按钮 ──
 function attachFeedback(msgDiv) {
   const row = document.createElement('div');
@@ -812,12 +929,16 @@ function goHome() {
   welcomeBlock.style.display = '';
   quickChips.style.display = '';
   backBtn.classList.remove('visible');
+  memBtn.classList.remove('visible');
   currentTopic = null;
   topicGreetingShown = false;
   messages = [];
+  activeTitle = '';
+  showTopicBar('');
   userInput.placeholder = '和 Circle 聊聊...';
   userInput.focus();
   scrollToBottom();
+  updateMemCard();
 }
 
 // ── 进入话题 ──
@@ -837,6 +958,7 @@ function enterTopic(topic, greeting) {
   topicGreetingShown = true;
 
   userInput.placeholder = '输入你想问的……';
+  showTopicBar(TOPIC_LABELS[topic] || topic);
   userInput.focus();
 }
 
@@ -853,12 +975,15 @@ async function sendMessage(userText) {
     backBtn.classList.add('visible');
     memBtn.classList.add('visible');
     currentTopic = '__free__';
+    showTopicBar(activeTitle || '💬 自由畅聊');
   }
+  const createdNew = !currentSessionId;
   if (!currentSessionId) {
     currentSessionId = await createSession();
   }
 
   const question = userText.trim();
+  if (createdNew) newSessionTitle = question;
   addMessage('user', question);
   lastQA = { q: question, a: '' };
 
@@ -889,6 +1014,8 @@ async function sendMessage(userText) {
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let replyText = '';
+    let refs = [];   // 本回答引用的知识来源（后端 SSE refs 事件）
+    let buffer = '';  // 行缓冲区，防止 chunk 边界截断
     let bubbleDiv = document.createElement('div');
     bubbleDiv.className = 'message bot';
     let bubbleEl = document.createElement('div');
@@ -898,32 +1025,80 @@ async function sendMessage(userText) {
     chatArea.appendChild(bubbleDiv);
     scrollToBottom();
 
+    function processSSELine(line) {
+      if (!line.startsWith('data: ')) return;
+      try {
+        const d = JSON.parse(line.slice(6));
+        if (d.error) {
+          stopThinking(d.error || '抱歉，我走神了，能再问一次吗？');
+          isLoading = false;
+          sendBtn.disabled = false;
+          userInput.disabled = false;
+          userInput.focus();
+          return;
+        }
+        if (d.refs && Array.isArray(d.refs)) { refs = d.refs; }
+        if (d.token) {
+          replyText += d.token;
+          bubbleEl.textContent = replyText;
+          scrollToBottom();
+        }
+        if (d.done) {
+          bubbleEl.innerHTML = renderBotContent(replyText);
+          attachFeedback(bubbleDiv);
+          if (refs.length) {
+            const row = document.createElement('div');
+            row.className = 'refs-row';
+            const hasUrl = refs.some(r => r && r.url);
+            const chips = refs.map(r => {
+              const title = r && r.title ? r.title : String(r || '');
+              const url = r && r.url ? r.url : '';
+              return url
+                ? '<a class="ref-chip ref-link" href="' + escapeAttr(url) + '" target="_blank" rel="noopener noreferrer" title="点开查看原文">' + escapeHtml(title) + ' ↗</a>'
+                : '<span class="ref-chip" title="回答中引用的知识条目">' + escapeHtml(title) + '</span>';
+            }).join('');
+            row.innerHTML = '<span class="refs-label">' + (hasUrl ? '🔗 来源' : '📌 参考') + '</span>' + chips;
+            bubbleDiv.appendChild(row);
+          }
+          if (d.truncated) {
+            const tn = document.createElement('div');
+            tn.className = 'trunc-note';
+            tn.textContent = '… 这部分内容很长，我还能继续说 —— 回复「继续」就可以接着讲。';
+            bubbleDiv.appendChild(tn);
+          }
+          lastQA.a = replyText;
+          if (d.user_status) {
+            if (d.user_status.name) userStatus.textContent = '你好，' + d.user_status.name + '！';
+            else if (d.user_status.has_info) userStatus.textContent = 'Circle 正在了解你';
+          }
+          loadSessionList();
+          // 新会话第一条回答后：会话标题 = 首问，标题条跟随
+          if (newSessionTitle) {
+            activeTitle = clipTitle(newSessionTitle);
+            if (currentTopic === '__free__') showTopicBar(activeTitle);
+            newSessionTitle = null;
+          }
+        }
+      } catch (e) {}
+    }
+
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // 处理缓冲区中剩余的数据
+        if (buffer) {
+          for (const line of buffer.split('\n')) {
+            processSSELine(line);
+          }
+        }
+        break;
+      }
       const t = decoder.decode(value, { stream: true });
-      const lines = t.split('\n');
+      buffer += t;
+      const lines = buffer.split('\n');
+      buffer = lines.pop();  // 保留最后一段不完整的行
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const d = JSON.parse(line.slice(6));
-          if (d.error) { bubbleEl.textContent = d.error; return; }
-          if (d.token) {
-            replyText += d.token;
-            bubbleEl.textContent = replyText;
-            scrollToBottom();
-          }
-          if (d.done) {
-            bubbleEl.innerHTML = renderBotContent(replyText);
-            attachFeedback(bubbleDiv);
-            lastQA.a = replyText;
-            if (d.user_status) {
-              if (d.user_status.name) userStatus.textContent = '你好，' + d.user_status.name + '！';
-              else if (d.user_status.has_info) userStatus.textContent = 'Circle 正在了解你';
-            }
-            loadSessionList();
-          }
-        } catch (e) {}
+        processSSELine(line);
       }
     }
   } catch (err) {
@@ -940,20 +1115,33 @@ async function sendMessage(userText) {
 async function createSession() {
   const resp = await fetch('/api/sessions?title=新对话', { method: 'POST' });
   const d = await resp.json();
+  loadSessionList();  // 新建会话后自动刷新列表
   return d.session_id;
 }
 
 async function loadSessionList() {
   try {
     const resp = await fetch('/api/sessions');
+    if (!resp.ok) return;
     const data = await resp.json();
-    const sessions = data.sessions || [];
+    // 按更新时间倒序排列（最新对话在最上方）
+    const sessions = (data.sessions || []).slice().sort((a, b) => {
+      const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return (tb || 0) - (ta || 0);
+    });
+    // 无历史会话时的空状态提示
+    if (sessions.length === 0) {
+      sessionList.innerHTML = '<div class="sess-empty">暂无历史对话，开始新对话吧</div>';
+      return;
+    }
     sessionList.innerHTML = sessions.map(s => {
       const d = new Date(s.updated_at);
       const t = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       let cls = 'session-item' + (s.id === currentSessionId ? ' active' : '');
-      return '<div class="' + cls + '" data-id="' + s.id + '">' +
-        '<button class="sess-del" data-id="' + s.id + '">x</button>' +
+      const safeId = escapeAttr(s.id);
+      return '<div class="' + cls + '" data-id="' + safeId + '" role="button" tabindex="0">' +
+        '<button class="sess-del" data-id="' + safeId + '" aria-label="删除会话">✕</button>' +
         '<div class="sess-title">' + escapeHtml(s.title) + '</div>' +
         '<div class="sess-time">' + t + ' - ' + s.msg_count + '条</div>' +
       '</div>';
@@ -962,6 +1150,13 @@ async function loadSessionList() {
       el.addEventListener('click', (e) => {
         if (e.target.classList.contains('sess-del')) return;
         switchSession(el.dataset.id);
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (e.target.classList.contains('sess-del')) return;
+          switchSession(el.dataset.id);
+        }
       });
     });
     sessionList.querySelectorAll('.sess-del').forEach(btn => {
@@ -975,6 +1170,7 @@ async function loadSessionList() {
 
 async function switchSession(sid) {
   currentSessionId = sid;
+  currentTopic = null;
   // 文件上下文按会话隔离，切换会话时重置文件按钮状态
   uploadBtn.style.display = 'flex';
   clearFileBtn.style.display = 'none';
@@ -991,6 +1187,8 @@ async function switchSession(sid) {
   try {
     const resp = await fetch('/api/sessions?id=' + encodeURIComponent(sid));
     const data = await resp.json();
+    activeTitle = (data.title && data.title !== '新对话') ? clipTitle(data.title) : '💬 自由畅聊';
+    showTopicBar(activeTitle);
     const history = data.messages || [];
     history.forEach(m => {
       if (m.role === 'user') {
@@ -1037,6 +1235,18 @@ sidebarOverlay.addEventListener('click', () => {
   sidebarOverlay.classList.remove('show');
 });
 
+// ── 桌面侧边栏收起 / 展开（含刷新后记忆状态） ──
+const appRoot = document.querySelector('.app-container');
+const sideCollapse = document.getElementById('sideCollapse');
+const sideRail = document.getElementById('sideRail');
+function setSidebarHidden(hidden) {
+  appRoot.classList.toggle('sidebar-hidden', !!hidden);
+  try { localStorage.setItem('circle_sidebar_hidden', hidden ? '1' : '0'); } catch (e) {}
+}
+sideCollapse.addEventListener('click', () => setSidebarHidden(true));
+sideRail.addEventListener('click', () => setSidebarHidden(false));
+if (localStorage.getItem('circle_sidebar_hidden') === '1') setSidebarHidden(true);
+
 newChatBtn.addEventListener('click', async () => {
   currentSessionId = null;
   goHome();
@@ -1068,9 +1278,24 @@ userInput.addEventListener('input', () => {
 quickChips.addEventListener('click', (e) => {
   const chip = e.target.closest('.quick-chip');
   if (!chip || isLoading) return;
+  const preset = chip.dataset.preset;
+  if (preset) { sendMessage(preset); return; }
   const topic = chip.dataset.topic;
   const greeting = chip.dataset.greeting;
   enterTopic(topic, greeting);
+});
+// 快捷标签键盘支持
+quickChips.addEventListener('keydown', (e) => {
+  const chip = e.target.closest('.quick-chip');
+  if (!chip || isLoading) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    const preset = chip.dataset.preset;
+    if (preset) { sendMessage(preset); return; }
+    const topic = chip.dataset.topic;
+    const greeting = chip.dataset.greeting;
+    enterTopic(topic, greeting);
+  }
 });
 
 // 返回按钮
@@ -1133,7 +1358,7 @@ async function loadMemories() {
       memList.innerHTML = keys.map(k =>
         '<div class="mem-item">' +
           '<div><strong>' + escapeHtml(k) + '</strong><span class="mem-key">：' + escapeHtml(mem[k]) + '</span></div>' +
-          '<button class="mem-del" data-key="' + escapeHtml(k) + '" title="删除">✕</button>' +
+          '<button class="mem-del" data-key="' + escapeAttr(k) + '" title="删除" aria-label="删除记忆">✕</button>' +
         '</div>'
       ).join('');
       // 单条删除
@@ -1141,6 +1366,8 @@ async function loadMemories() {
         btn.addEventListener('click', async () => {
           await fetch('/api/memory?session_id=' + encodeURIComponent(sessionId) + '&key=' + encodeURIComponent(btn.dataset.key), { method: 'DELETE' });
           loadMemories();
+          updateMemCard();   // 同步首页「Circle 记得你」卡片
+          refreshUserStatus();   // 同步顶部称呼
         });
       });
     }
@@ -1151,22 +1378,78 @@ async function loadMemories() {
 
 memBtn.addEventListener('click', () => {
   memOverlay.classList.add('show');
+  memOverlay.setAttribute('aria-hidden', 'false');
   loadMemories();
+  // 将焦点移到弹窗
+  setTimeout(() => {
+    const closeBtn = document.getElementById('memClose');
+    if (closeBtn) closeBtn.focus();
+  }, 100);
 });
+
+// 首页卡片「管理」→ 打开同一个记忆弹窗
+document.getElementById('memCardManage').addEventListener('click', () => memBtn.click());
+
 
 memClose.addEventListener('click', () => {
   memOverlay.classList.remove('show');
+  memOverlay.setAttribute('aria-hidden', 'true');
+  updateMemCard();   // 关闭即同步，任何改动都不残留
+  refreshUserStatus();
+  memBtn.focus();
 });
 
 memOverlay.addEventListener('click', (e) => {
-  if (e.target === memOverlay) memOverlay.classList.remove('show');
+  if (e.target === memOverlay) {
+    memOverlay.classList.remove('show');
+    memOverlay.setAttribute('aria-hidden', 'true');
+    updateMemCard();   // 关闭即同步，任何改动都不残留
+    refreshUserStatus();
+    memBtn.focus();
+  }
 });
 
 memClear.addEventListener('click', async () => {
   if (!confirm('确定要清除 Circle 记住的关于你的所有信息吗？')) return;
   await fetch('/api/memory?session_id=' + encodeURIComponent(sessionId), { method: 'DELETE' });
   memList.innerHTML = '<div class="mem-empty">还没有关于你的记忆</div>';
+  updateMemCard();   // 首页无记忆 → 自动隐藏卡片
+  refreshUserStatus();   // 顶部称呼回落为默认
 });
+
+// ESC 键关闭弹窗
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && memOverlay.classList.contains('show')) {
+    memOverlay.classList.remove('show');
+    memOverlay.setAttribute('aria-hidden', 'true');
+    updateMemCard();   // 关闭即同步，任何改动都不残留
+    refreshUserStatus();
+    memBtn.focus();
+  }
+});
+
+// ── 首页「Circle 记得你」卡片（仅在有记忆时展示） ──
+const MEM_LABELS = { name: '称呼', preferences: '饮食偏好', health_info: '健康信息', sleep_info: '睡眠', daily_routine: '作息', finance_info: '理财情况' };
+async function updateMemCard() {
+  const card = document.getElementById('memCard');
+  const body = document.getElementById('memCardBody');
+  try {
+    const resp = await fetch('/api/memory?session_id=' + encodeURIComponent(sessionId));
+    const data = await resp.json();
+    const mem = data.memories || {};
+    const keys = Object.keys(mem);
+    if (!keys.length) { card.style.display = 'none'; return; }
+    // 至多展示 2 条、每条截断，保持便签清爽不拥挤
+    const MAX_FACTS = 2, MAX_VAL = 14;
+    const clip = v => v.length > MAX_VAL ? v.slice(0, MAX_VAL) + '…' : v;
+    const nameFirst = ['name'].concat(keys.filter(k => k !== 'name'));
+    const picked = nameFirst.filter(k => keys.includes(k)).slice(0, MAX_FACTS);
+    body.textContent = picked.map(k => (MEM_LABELS[k] || k) + ' ' + clip(mem[k])).join(' · ');
+    body.title = picked.map(k => (MEM_LABELS[k] || k) + '：' + mem[k]).join('；');  // 悬停查看完整记忆
+    card.style.display = 'inline-flex';
+  } catch (e) { card.style.display = 'none'; }
+}
+
 
 // ── 用户状态指示器 ──
 async function refreshUserStatus() {
@@ -1183,6 +1466,15 @@ async function refreshUserStatus() {
   } catch (e) { /* 静默失败 */ }
 }
 refreshUserStatus();
+updateMemCard();
+
+// ── 页面加载完成后立即加载历史会话列表 ──
+// 桌面端侧边栏常驻显示，无需任何用户操作即可看到全部历史会话（按更新时间排序）
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { loadSessionList(); });
+} else {
+  loadSessionList();
+}
 
 // ── 初始聚焦 ──
 userInput.focus();
