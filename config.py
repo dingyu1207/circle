@@ -16,28 +16,29 @@ MAX_CONTINUE_ROUNDS = 2  # 回答被 MAX_TOKENS 截断时，自动续写的最�
 API_TIMEOUT = 30  # API 调用超时（秒）
 API_BASE_URL = "https://api.deepseek.com/v1/chat/completions"
 
-# ── 联网搜索（DeepSeek Responses API） ──
-SEARCH_MODEL = "deepseek-v4-flash"  # 目前仅该模型支持原生联网搜索
-SEARCH_API_BASE = "https://api.deepseek.com"  # openai SDK 会自动追加 /responses
-# 命中任一关键词即走联网搜索（过短的闲聊消息不会触发，见 app.py 的 _should_search）
-SEARCH_TRIGGER_KEYWORDS = ["最新", "今天", "最近", "新闻", "查询", "搜一下", "查一下"]
-# 联网搜索的系统指令：优先呈现女性视角（可在 config 中直接调整措辞）
-SEARCH_INSTRUCTIONS = (
-    "你是一个关注女性视角的搜索助手。在搜索和回答问题时，请优先关注和呈现："
-    "1. 涉及女性成就、女性领导力、女性创业的新闻；"
-    "2. 女性健康、权益保护、教育就业相关内容；"
-    "3. 女性在科技、经济、文化等领域的贡献；"
-    "4. 反映女性生活状态、职场发展、社会地位变化的报道。"
-    "如果搜索结果中缺乏女性视角的内容，请如实告知用户，"
-    "并尽可能从已有信息中提取与女性相关的部分。"
-    "当用户询问理财、投资、保险、养老等金融问题时，优先搜索面向女性用户的"
-    "金融知识和建议，关注资金安全、稳健理财、长期规划等方向。"
-    "无论搜索到什么内容，回答都不得出现低俗、色情、性暗示或贬低性的玩笑与措辞，保持客观、体贴与尊重。"
-    "\n\n关于日期：请严格遵守附加 instructions 中给出的【当前日期】，"
-    "不要编造或猜测今天是几号。新闻中的「昨天」「今天」「本周」等相对时间词，"
-    "都应以【当前日期】为准进行转换。"
-)
+# 检索触发词，分强弱两档（判定逻辑见 app.py 的 _should_search）：
+# 强意图——本身就是「我要找信息」的明确信号，不受消息长度限制。
+# 中文四个字已是完整语义（如「今日新闻」），统一套用长度阈值会误杀短查询。
+SEARCH_STRONG_KEYWORDS = ["新闻", "查询", "搜索", "搜一下", "查一下"]
+# 弱意图——可能只是闲聊里的顺带词（"我今天很累"），需配合长度兜底，避免误触发
+SEARCH_WEAK_KEYWORDS = ["最新", "今天", "最近"]
 
+# ── 每日新闻（官方媒体 RSS，0 token / 0 key / 零第三方依赖） ──
+# 为什么不用搜索 API：DeepSeek 原生 web_search 在部分账号上不生效——tools 声明被服务端
+# 收下，却从不产生 web_search_call；DuckDuckGo 在国内网络不可达。
+#
+# 实测（2026-09-15）：多数中文媒体 RSS 已是「僵尸源」——HTTP 200、XML 正常，内容却是几年前的。
+# 下列源实测停更，故未启用；若日后恢复，加回 NEWS_FEEDS 即可，新鲜度闸门会自动放行：
+#   新华网 时政 http://www.xinhuanet.com/politics/news_politics.xml  停更 1371 天
+#   人民网 时政 http://www.people.com.cn/rss/politics.xml            停更 467 天
+#   新浪 国内要闻 http://rss.sina.com.cn/news/china/focus15.xml      停更 2913 天
+NEWS_FEEDS = [
+    {"name": "中新网", "url": "https://www.chinanews.com.cn/rss/scroll-news.xml"},
+]
+NEWS_MAX_AGE_DAYS = 3  # 新鲜度闸门：超过这个天数的条目一律丢弃（僵尸源靠它兜住）
+NEWS_CACHE_TTL = 600  # 头条缓存秒数：抓取虽然免费，但没必要每次提问都抓一遍
+NEWS_MAX_PER_FEED = 8  # 每个源最多取几条
+NEWS_MAX_TOTAL = 10  # 合并后最多给模型几条
 # ── 网页抓取 / 权威检索（0 token 优先；「读正文」是唯一烧 token 的自愿环节） ──
 # 用户贴链接后，命中任一「读」词才抓正文送模型；否则只给标题 + 可点链接（0 token）
 READ_TRIGGER_KEYWORDS = [

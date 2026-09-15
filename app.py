@@ -19,8 +19,8 @@ from feedback import feedback_manager as _fb
 import session_manager as _sm
 import config
 from file_parser import extract_text, ALLOWED_EXTS, MAX_FILE_SIZE, MAX_TEXT_LEN
-from tools import web_search as _web_search
 from tools import web_fetch as _web_fetch
+from tools import news as _news
 
 # ── 日志配置 ─────────────────────────────────────────────────────
 # 统一日志：启动、路由请求、API 调用、错误均通过 logging 记录。
@@ -204,74 +204,79 @@ def tool_recipe(user_msg: str) -> str:
         return f"菜谱查询失败：{e}"
 
 
+def tool_news(user_msg: str = "") -> str:
+    """抓取官方媒体 RSS 头条（0 token、0 key）。
+
+    这是「实时信息」通路上目前唯一稳定可用的来源：DeepSeek 原生联网搜索在部分账号上
+    不生效（tools 声明被服务端收下却不产生 web_search_call），DuckDuckGo 在国内不可达。
+    抓取免费，只有让模型把头条组织成晨报才消耗 token。
+    """
+    items = _news.fetch_news()
+    if not items:
+        return ""  # 全部源失败 → 返回空，由调用方降级为普通回答
+    today = datetime.now().strftime("%Y年%m月%d日")
+    return (
+        f"以下是 {today} 抓取到的官方媒体头条（新华网 / 人民网 / 中新网，轮流取；"
+        f"抓取本身不消耗 token）：\n\n{_news.format_news(items)}"
+    )
+
+
 def tool_search(query: str) -> str:
-    """联网搜索（DuckDuckGo Instant Answer，免费免 Key）。返回前 3 条结果。"""
-    try:
-        resp = requests.get(
-            "https://api.duckduckgo.com/",
-            params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
-            timeout=8,
-        )
-        data = resp.json()
-        parts = []
-        # 主摘要
-        if data.get("AbstractText"):
-            src = f"（来源：{data['AbstractSource']}）" if data.get("AbstractSource") else ""
-            parts.append(f"📖 {data['AbstractText'][:300]}{src}")
-        # 相关话题
-        for topic in (data.get("RelatedTopics") or [])[:3]:
-            if isinstance(topic, dict) and topic.get("Text"):
-                parts.append(f"• {topic['Text'][:200]}")
-        if parts:
-            return f"🔍 搜索「{query}」：\n" + "\n".join(parts[:4])  # 最多 1 摘要 + 3 条
+    """在官方媒体头条里做本地关键词匹配（0 网络 / 0 token）。
+
+    能力边界要说明白：这不是通用网页搜索，只是在已抓取的头条池里匹配；命中不到返回空、
+    降级走常规回答。（原实现走 DuckDuckGo Instant Answer，该主机在国内网络不可达。）
+    """
+    hits = _news.search_news(query)
+    if not hits:
         return ""
-    except Exception:
-        return ""  # 搜索失败不阻塞对话
+    return f"🔍 官方媒体近期头条中与「{query}」相关的条目：\n" + _news.format_news(hits)
 
 
 def tool_authority_sources(query: str) -> dict:
-    """0 token 权威检索（DuckDuckGo Instant Answer，免费免 Key）。
+    """0 token 官方媒体检索：给可点出处，不经过模型。
 
     返回 {"reply": str, "refs": [{"title": str, "url": str}, ...]}；
-    无可用结果时返回 {}（调用方应降级走常规搜索/回答）。
+    无可用结果时返回 {}（调用方应降级走常规回答）。
     """
-    try:
-        resp = requests.get(
-            "https://api.duckduckgo.com/",
-            params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
-            timeout=8,
-        )
-        data = resp.json()
-    except Exception:
+    hits = _news.search_news(query)
+    if not hits:
         return {}
-    parts = []
-    refs = []
-    if data.get("AbstractText"):
-        url = data.get("AbstractURL") or ""
-        src = data.get("AbstractSource") or ""
-        parts.append(f"📖 {data['AbstractText'][:300]}")
-        if url:
-            refs.append({"title": (src or url)[:60], "url": url})
-    for topic in (data.get("RelatedTopics") or [])[:4]:
-        if isinstance(topic, dict) and topic.get("Text"):
-            parts.append(f"• {topic['Text'][:200]}")
-            first_url = topic.get("FirstURL") or ""
-            if first_url:
-                refs.append({"title": topic["Text"][:60], "url": first_url})
-    if not parts and not refs:
-        return {}
+    refs = [{"title": f"[{it['source']}] {it['title']}"[:60], "url": it["url"]} for it in hits]
     return {
-        "reply": "我从公开来源里帮你找了一圈，下面这些出处可以直接点开看原文（点链接本身不耗 token）：\n\n"
-        + "\n".join(parts),
+        "reply": "我从官方媒体（新华网 / 人民网 / 中新网）的近期头条里找了一圈，"
+        "下面这些出处可以直接点开看原文（点链接本身不耗 token）：\n\n" + _news.format_news(hits),
         "refs": refs,
     }
+
+
+_WEEKDAYS = "一二三四五六日"
+
+
+def _build_date_context(now=None) -> str:
+    """构造注入 system prompt 最前端的当前时间上下文。
+
+    必须带上「时分」与星期：只给日期时，模型无从判断此刻是上午还是下午，
+    会自行猜一个时段（曾把下午 14:50 问候成「早上好」）——信息缺失时模型倾向于补全而非承认不知道。
+    """
+    now = now or datetime.now()
+    return (
+        f"\n【当前时间】{now.strftime('%Y年%m月%d日')}（星期{_WEEKDAYS[now.weekday()]}）"
+        f"{now.strftime('%H:%M')}。"
+        "请以此为准回答所有涉及日期与时间的问题——包括问候语的时段（早上/下午/晚上），"
+        "绝不要编造或猜测。新闻标题里的「昨天」「今天」「本周」等相对时间词，"
+        "也一律以【当前时间】为基准换算。\n\n"
+    )
 
 
 # 工具触发关键词（天气/菜谱 优先，搜索 兜底）
 _TOOL_TRIGGERS = {
     "weather": ["天气", "下雨", "温度", "户外", "出门穿", "冷不冷", "热不热", "适合.*运动"],
     "recipe": ["菜谱", "食谱", "推荐.*吃", "低卡", "减脂餐", "晚餐", "午餐", "早餐", "做什么.*菜", "教我.*做"],
+    "news": ["新闻", "头条", "今日要闻", "时政", "时事", "发生什么", "有什么大事"],
 }
+# 工具名 → 调用函数（新增工具只需在上面加关键词、这里加一行）
+_TOOL_CALLERS = {"weather": tool_weather, "recipe": tool_recipe, "news": tool_news}
 # 搜索预判：消息看起来像在"找信息"时才触发（排除日常聊天）
 _SEARCH_PATTERNS = [
     r"[?？]",
@@ -279,7 +284,7 @@ _SEARCH_PATTERNS = [
     r"什么",
     r"怎么",
     r"为什么",
-    r"哪[[:alpha:]]",
+    r"哪[一-鿿]",  # Python 的 re 不支持 POSIX 字符类，原先写 [[:alpha:]] 实际匹配不到「哪个/哪些」
     r"是谁",
     r"多少",
     r"最新",
@@ -298,9 +303,21 @@ _SEARCH_PATTERNS = [
 ]
 
 
+def _has_search_keyword(user_msg: str) -> bool:
+    """消息里是否含任意联网搜索触发词（强 + 弱）。"""
+    return any(kw in user_msg for kw in config.SEARCH_STRONG_KEYWORDS + config.SEARCH_WEAK_KEYWORDS)
+
+
 def _should_search(user_msg: str) -> bool:
-    """判断是否命中联网搜索关键词（过短的消息不算，避免"今天""嗯"误触发）。"""
-    return len(user_msg) > 4 and any(kw in user_msg for kw in config.SEARCH_TRIGGER_KEYWORDS)
+    """判断是否走联网搜索。
+
+    强意图词（新闻/查询/搜索…）直接触发——中文四个字已是完整语义，
+    统一套长度阈值会误杀「今日新闻」这类短查询。
+    弱意图词（今天/最近/最新）多见于闲聊（"我今天很累"），仍需长度兜底。
+    """
+    if any(kw in user_msg for kw in config.SEARCH_STRONG_KEYWORDS):
+        return True
+    return len(user_msg) > 4 and any(kw in user_msg for kw in config.SEARCH_WEAK_KEYWORDS)
 
 
 def _contains_url(text: str) -> bool:
@@ -328,20 +345,23 @@ def _clean_read_query(msg: str) -> str:
 
 def detect_and_call_tools(user_msg: str) -> str:
     """检测用户消息 → 按需调用工具 API → 返回拼接的上下文文本。"""
-    # 第一优先级：天气 / 菜谱（精确匹配，免费且确定性）
+    # 第一优先级：天气 / 菜谱 / 新闻（精确匹配，免费且确定性）
     for tool_name, keywords in _TOOL_TRIGGERS.items():
         if any(re.search(kw, user_msg) for kw in keywords):
-            result = tool_weather(user_msg) if tool_name == "weather" else tool_recipe(user_msg)
-            return "\n\n【实时工具数据】\n" + result
+            result = _TOOL_CALLERS[tool_name](user_msg)
+            if result:
+                return "\n\n【实时工具数据】\n" + result
+            break  # 该工具这次没拿到数据 → 交给后续路径，不盲目试下一个工具
 
-    # 第二优先级：命中 DeepSeek 联网搜索关键词 → 交由 /api/chat 走 Responses API（不在此注入）
-    if _should_search(user_msg):
-        return ""
-
-    # 第三优先级：问题型消息的免费兜底搜索（DuckDuckGo）
+    # 第二优先级：像在找信息的消息 → 在官方媒体头条里做本地匹配（0 网络 / 0 token）
+    #
+    # 这里**没有**通用网页搜索，是刻意的：DeepSeek 原生联网搜索在本账号上不生效
+    # （tools 声明被服务端收下却不产生 web_search_call），DuckDuckGo 在国内网络不可达。
+    # 两条路都实测不可用后已移除——匹配不到就老实返回空、降级为普通回答，不假装搜过。
     is_question = any(re.search(p, user_msg) for p in _SEARCH_PATTERNS)
-    is_short_chat = len(user_msg) <= 5  # "你好" "嗯" 等不搜
-    if is_question and not is_short_chat:
+    # 短消息通常是闲聊（"你好" "嗯"），但含明确检索词时不算——"最新消息"应能搜
+    is_short_chat = len(user_msg) <= 5 and not _has_search_keyword(user_msg)
+    if _should_search(user_msg) or (is_question and not is_short_chat):
         result = tool_search(user_msg)
         if result:
             return "\n\n【实时工具数据】\n" + result
@@ -528,45 +548,6 @@ def _stream_normal_chat(session_id: str, user_id: str, user_msg: str, api_messag
     yield from _stream_done(session_id, user_id, user_msg, full_reply, truncated=still_truncated)
 
 
-def _stream_web_search(session_id: str, user_id: str, user_msg: str, instructions: str):
-    """DeepSeek Responses API 联网搜索流式回复：逐 token SSE 返回 + 统计用量。"""
-    full_reply = ""
-    total_tokens = 0
-    started = False
-    try:
-        for event in _web_search.stream_search_events(user_msg, instructions=instructions):
-            etype = getattr(event, "type", "")
-            if etype == "response.output_text.delta":
-                delta = getattr(event, "delta", "") or ""
-                if not delta:
-                    continue
-                started = True
-                full_reply += delta
-                yield f"data: {json.dumps({'token': delta}, ensure_ascii=False)}\n\n"
-            elif etype == "response.completed":
-                usage = getattr(getattr(event, "response", None), "usage", None)
-                if usage:
-                    total_tokens = int(getattr(usage, "total_tokens", 0) or 0)
-    except Exception as e:
-        if not started:
-            raise  # 尚未产出任何内容 → 交由上层降级为普通回答
-        logger.error("联网搜索中途失败 session_id=%s: %s", session_id, e)
-        yield f"data: {json.dumps({'error': '联网搜索暂时不可用，请稍后再试'}, ensure_ascii=False)}\n\n"
-        return
-
-    if not started:
-        raise ValueError("联网搜索返回空结果，降级为普通回答")
-
-    # ── 记录 token 用量（流结束后） ──
-    if total_tokens > 0:
-        _record_usage(total_tokens)
-        logger.info("联网搜索 token 用量=%s 今日累计=%s", total_tokens, _daily_usage_total())
-
-    # ── 保存消息 + 提取记忆 + 结束事件 ──
-    logger.info("联网搜索完成 session_id=%s 长度=%s", session_id, len(full_reply))
-    yield from _stream_done(session_id, user_id, user_msg, full_reply)
-
-
 def _stream_done(session_id: str, user_id: str, user_msg: str, full_reply: str, *, refs=None, truncated=False):
     """流式通用收尾：保存消息、提取记忆、产出 done 事件（可携带 refs）。"""
     _sm.add_message(session_id, "user", user_msg)
@@ -707,6 +688,7 @@ SYSTEM_PROMPT = """你叫Circle，是一个温暖、可靠、有同理心的生�
 
 【工具与上下文】
 上方可能附带【实时工具数据】、【相关知识条目】和【用户记忆】。有则自然地融入回答。复杂请求可用【任务拆解】分步引导。
+当【实时工具数据】是新闻头条时：注意你手上**只有标题和链接，没有正文**。所以只做两件事——挑 5-8 条最值得看的，用你自己的话重述标题里已有的信息，并保留来源、链接和「这是哪一天的头条」。**标题里没写的，一个字都不要补**：不要替它补背景、原因、数字、影响或后续。这不是"发挥"的地方，编出来的新闻比不报新闻更糟。另外不要对时政类内容做评价、站队或延伸解读。
 
 【内容合规底线】
 - 绝不输出任何违反中国法律法规的内容，包括但不限于：危害国家安全与统一、损害国家荣誉和利益、煽动颠覆或分裂、破坏民族团结、宣扬恐怖主义或极端主义、传播淫秽色情与暴力等违法有害信息。
@@ -793,8 +775,8 @@ def chat():
     # 将摘要注入到 System Prompt（排在工具数据之前）
     summary_text = f"\n\n【对话背景摘要】\n{summary}" if summary else ""
 
-    # ── 当前日期上下文（注入 system prompt 最前端，防止模型编造日期） ──
-    date_ctx = f"\n【当前日期】{datetime.now().strftime('%Y年%m月%d日')}，请以这个日期为准回答所有涉及日期的问题，绝不要编造或猜测日期。\n\n"
+    # ── 当前时间上下文（注入 system prompt 最前端，防止模型编造日期与时段） ──
+    date_ctx = _build_date_context()
 
     # ── 知识库 + 工具 + 记忆 ──
     knowledge_entries = retrieve(topic + " " + user_msg, top_n=3)
@@ -819,17 +801,13 @@ def chat():
 
     tool_context = detect_and_call_tools(user_msg)
 
-    # ── 网页抓取 / 权威检索 路由（0 token 优先；「读正文」仅用户主动触发） ──
-    # 优先级：天气/菜谱 > 贴链接(预览或读全文) > 权威检索 > 联网搜索 > 普通对话
+    # ── 网页抓取 / 官方媒体检索 路由（0 token 优先；「读正文」仅用户主动触发） ──
+    # 优先级：天气/菜谱/新闻 > 贴链接(预览或读全文) > 官方媒体检索 > 普通对话
     urls = _web_fetch.extract_urls(user_msg) if _contains_url(user_msg) else []
     url_read = bool(urls) and not tool_context and _is_read_request(user_msg)
     url_peek = bool(urls) and not tool_context and not url_read
     authority_mode = not tool_context and not url_read and not url_peek and _is_authority_request(user_msg)
-    # 联网搜索：命中关键词且未被更上层接管时，走 DeepSeek Responses API
-    use_web_search = (
-        not tool_context and not url_peek and not url_read and not authority_mode and _should_search(user_msg)
-    )
-    # 读网页 / 联网搜索共用：不带知识库与工具数据的 system 底稿
+    # 读网页专用：不带知识库与工具数据的 system 底稿
     sys_base = date_ctx + SYSTEM_PROMPT + summary_text + file_text + memories_text
 
     # ── 构造消息 ──
@@ -874,21 +852,14 @@ def chat():
                 return
             except Exception as e:
                 logger.warning("网页读取失败，降级为普通回答 session_id=%s: %s", session_id, e)
-        # 2) 权威检索：免费来源，给可点出处（0 token）
+        # 2) 官方媒体检索：免费来源，给可点出处（0 token）
         if authority_mode:
             try:
                 yield from _stream_authority_search(session_id, user_id, user_msg)
                 return
             except Exception as e:
-                logger.warning("权威免费检索无结果，走常规路径 session_id=%s: %s", session_id, e)
-        # 3) 联网搜索：优先 Responses API，失败（未产出任何内容）则降级为普通回答
-        if use_web_search:
-            try:
-                yield from _stream_web_search(session_id, user_id, user_msg, sys_base)
-                return
-            except Exception as e:
-                logger.warning("联网搜索失败，降级为普通回答 session_id=%s: %s", session_id, e)
-        # 4) 普通回答前先推参考来源，前端据此展示「参考来源」chip
+                logger.warning("官方媒体检索无结果，走常规路径 session_id=%s: %s", session_id, e)
+        # 3) 普通回答前先推参考来源，前端据此展示「参考来源」chip
         if refs:
             yield f"data: {json.dumps({'refs': refs}, ensure_ascii=False)}\n\n"
         yield from _stream_normal_chat(session_id, user_id, user_msg, api_messages, api_key)
