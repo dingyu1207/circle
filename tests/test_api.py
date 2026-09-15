@@ -290,6 +290,18 @@ def test_build_date_context_includes_time_of_day():
     assert "星期二" in ctx
 
 
+def test_system_prompt_news_guidance():
+    """新闻段的两条硬约束：只重述标题已有信息 / 女性视角是选材偏好而非改写理由。
+
+    原先这段女性视角指令挂在已删的 SEARCH_INSTRUCTIONS 上，随搜索通路一起没了；
+    现移入 SYSTEM_PROMPT 的新闻段，用测试锁住，避免下次重构再弄丢。
+    """
+    prompt = app_module.SYSTEM_PROMPT
+    assert "标题里没写的，一个字都不要补" in prompt
+    assert "女性成就与领导力" in prompt
+    assert "选材的偏好，不是改写新闻的理由" in prompt
+
+
 # ── P4 新功能：网页抓取（0 token 预览 / 按需读正文 / 知识库 refs 对象化） ──
 
 

@@ -8,7 +8,7 @@
 | **它是什么** | 面向日常生活场景的对话助手，把「女性视角」当作设计默认值，而不是一个附加开关 |
 | **核心取舍** | 单次对话成本 < 1 分钱 · 规则记忆而非 LLM · 关键词检索而非向量 RAG · 联网默认 0 token |
 | **最值得看的部分** | 一套自建的 **5 维评测体系 + 29 条评测集**，用「检索开 / 关」对照实验量化知识库的真实贡献，而不是凭感觉说"有知识库更好" |
-| **工程状态** | 76 个自动化测试全绿 · GitHub Actions CI · Docker + gunicorn 部署就绪 · dry-run 全流程可零 token 自证 |
+| **工程状态** | 77 个自动化测试全绿 · GitHub Actions CI · Docker + gunicorn 部署就绪 · dry-run 全流程可零 token 自证 |
 
 > **这套评测方法不是凭空来的**：我在实习中做过 AI 编程智能体（Agent）评测任务包的质检——核心工作就是判断「自动判分代码有没有真正覆盖任务要求」，并通过构造坏 case 实锤判分漏洞。Circle 的评测体系，是同一套方法在产品侧的正面应用。
 
@@ -80,7 +80,7 @@ Circle 是这个假设的落地验证。它不做全能助理，只在几个生�
 - **成本与用量仪表**：每次调用的 token 与费用自动累计（`cost/daily_usage.json`），让"省成本"是可复现的数据，而不是口头承诺。
 - **评测体系 `eval/`**：没有真实用户也能主动发现坏答案——见上文「评测体系」一节（5 维标准，含「绝不违法违规 / 危害国家安全」全局合规红线 + 29 条评测集 + 检索开/关对照 + LLM-as-judge 与人工抽查双轨；dry-run 已通，真实评测待执行）。
 
-**工程护栏**：76 个测试、ruff + pre-commit 门禁——迭代敢下手，因为回归有网兜着。
+**工程护栏**：77 个测试、ruff + pre-commit 门禁——迭代敢下手，因为回归有网兜着。
 
 下一步真正的 KPI，是公开上线后回答这三个问题：谁在用、留下来没有、哪里最卡。详见 [Roadmap](#roadmap)。
 
@@ -181,7 +181,7 @@ Flask 后端 (app.py)
 - **模型**：[DeepSeek](https://platform.deepseek.com) `deepseek-chat`
 - **实时信息**：官方媒体 RSS（中新网，标准库解析 XML）+ 天气 / 菜谱免费 API + URL 抓取；全部 0 token 优先
 - **检索**：关键词匹配 + N-gram 子串打分，零额外依赖（为向量检索预留替换位）
-- **质量**：pytest 76 用例 · ruff + pre-commit · 单元/集成双层覆盖
+- **质量**：pytest 77 用例 · ruff + pre-commit · 单元/集成双层覆盖
 - **评测**：`eval/` 离线自测——5 维 rubric + 女性健康评测集 + 检索开/关 A/B + LLM-as-judge/人工双轨
 
 ### 快速开始
@@ -231,7 +231,7 @@ tools/                      # news（官方媒体 RSS + 新鲜度闸门）、web
 knowledge/                  # 4 大场景知识库（cooking/cleaning/health/finance）
 eval/                       # 评测体系：rubric + 评测集 + 检索开/关对比引擎（dry-run 可验证）
 memory/  sessions/  feedback/  cost/   # 本地数据（均已 gitignore）
-tests/                      # 76 个测试
+tests/                      # 77 个测试
 templates/index.html        # 单页前端
 ```
 
