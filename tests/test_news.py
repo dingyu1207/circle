@@ -119,9 +119,9 @@ def test_keep_fresh_drops_stale_and_undated_items():
 
 
 def test_fetch_news_discards_zombie_feed(monkeypatch):
-    """回归：僵尸源 HTTP 200、XML 完整，但内容停更三年——必须一条都不留。
+    """回归：僵尸源 HTTP 200、XML 完整，但内容停更数年——必须一条都不留。
 
-    这正是新华网/人民网 RSS 的真实状态（实测停更 1371 / 467 天），
+    这正是新华网/人民网 RSS 的真实状态（实测停更 1371 / 467 天，即 3.8 年 / 1.3 年），
     没有闸门的话模型会拿旧闻当今天的头条播报，且任何一层都看不出异常。
     """
     stale = _rss(_item("三年前的新闻", "https://example.com/2022-12/14/c_1.htm"))
