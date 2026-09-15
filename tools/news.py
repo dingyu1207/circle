@@ -16,7 +16,7 @@ import logging
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 import requests
@@ -37,12 +37,26 @@ logger = logging.getLogger(__name__)
 # 从正文 URL 里兜底抠日期，形如 /2026/09-15/ 或 /2026-09/15/
 _URL_DATE = re.compile(r"/(20\d{2})[-/]?(\d{2})[-/]?(\d{2})?/")
 
+# 时间一律归一到北京时间（naive，不带 tzinfo），不跟随运行机器的本地时区。
+#
+# 为什么必须显式钉死：NEWS_FEEDS 全是中文媒体，时间只在「北京时间」这一种读法下才对。
+# 部署形态是 Docker + gunicorn，而容器默认时区是 UTC——若用 astimezone() 取本机时区，
+# 本机（UTC+8）测试全绿，线上却把 15:38 的头条显示成 07:38，且新鲜度闸门也跟着偏 8 小时。
+# 这正是「本机绿 / CI 红」的典型形状：CI 跑在 UTC 上才暴露出来。
+_BJ_TZ = timezone(timedelta(hours=8))
+
+
+def _now_bj() -> datetime:
+    """当前北京时间（naive，与 _parse_pubdate 的归一结果同一口径）。"""
+    return datetime.now(_BJ_TZ).replace(tzinfo=None)
+
+
 # 进程内缓存：{时间戳, 头条列表}。进程重启即清零，与限流计数器同一风格。
 _cache = {"ts": 0.0, "items": []}
 
 
 def _parse_pubdate(raw: str):
-    """RFC822 时间字符串 → datetime；解析不出来返回 None。"""
+    """RFC822 时间字符串 → 北京时间 datetime（naive）；解析不出来返回 None。"""
     if not raw:
         return None
     try:
@@ -51,7 +65,9 @@ def _parse_pubdate(raw: str):
         return None
     if dt is None:
         return None
-    return dt.astimezone().replace(tzinfo=None) if dt.tzinfo else dt
+    if dt.tzinfo is None:  # 少数源不带时区，按北京时间理解
+        dt = dt.replace(tzinfo=_BJ_TZ)
+    return dt.astimezone(_BJ_TZ).replace(tzinfo=None)
 
 
 def _date_from_url(url: str):
@@ -117,12 +133,15 @@ def _keep_fresh(items: list, now: datetime) -> list:
 
 
 def fetch_news(limit: int = NEWS_MAX_TOTAL, use_cache: bool = True, now=None) -> list:
-    """抓取各源头条并合并。全部源都失败（或全部过期）时返回 []，由调用方降级。"""
-    epoch = time.time() if now is None else now
+    """抓取各源头条并合并。全部源都失败（或全部过期）时返回 []，由调用方降级。
+
+    ``now`` 可注入北京时间（naive），供测试固定时钟用。
+    """
+    epoch = time.time()
     if use_cache and _cache["items"] and epoch - _cache["ts"] < NEWS_CACHE_TTL:
         return _cache["items"][:limit]
 
-    now_dt = datetime.fromtimestamp(epoch)
+    now_dt = now or _now_bj()
     per_feed = []
     for feed in NEWS_FEEDS:
         try:

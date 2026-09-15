@@ -23,6 +23,11 @@ def _rss(*items: str) -> bytes:
 
 
 def _rfc822(dt: datetime) -> str:
+    """把北京时间（naive）格式化成 +0800 的 RFC822。
+
+    注意：**不要**用 datetime.now() 造「现在」——那取的是运行机器的本地时区，
+    在 CI（UTC）与本机（UTC+8）会得到不同结果。统一用 news._now_bj()。
+    """
     return dt.strftime("%a, %d %b %Y %H:%M:%S +0800")
 
 
@@ -84,6 +89,23 @@ def test_parse_rss_skips_items_missing_title_or_link():
 # ── 新鲜度闸门（本轮核心） ────────────────────────────────────────
 
 
+def test_parse_pubdate_normalizes_to_beijing_regardless_of_server_tz():
+    """回归：时间必须换算到**北京时间**，而不是运行机器的本地时区。
+
+    原先写的是 ``dt.astimezone()``（无参 = 取本机时区）：本机 UTC+8 全绿，
+    CI（UTC）上同一条「+0800 的 10:00」变成 02:00。部署形态是 Docker + gunicorn，
+    容器默认时区同样是 UTC——照原样上线会把中新网 15:38 的头条显示成 07:38。
+    用两个等价时刻断言，任何时区的机器上结果都必须一致。
+    """
+    assert news._parse_pubdate("Mon, 15 Sep 2026 10:00:00 +0800") == datetime(2026, 9, 15, 10, 0)
+    assert news._parse_pubdate("Mon, 15 Sep 2026 02:00:00 +0000") == datetime(2026, 9, 15, 10, 0)
+
+
+def test_parse_pubdate_treats_naive_time_as_beijing():
+    """少数源不带时区，按北京时间理解（而不是当成本机时间）。"""
+    assert news._parse_pubdate("Mon, 15 Sep 2026 10:00:00") == datetime(2026, 9, 15, 10, 0)
+
+
 def test_keep_fresh_drops_stale_and_undated_items():
     """过期条目丢弃；**时间无法验证的也丢弃**——拿不准就不采用。"""
     now = datetime(2026, 9, 15, 12, 0)
@@ -108,7 +130,7 @@ def test_fetch_news_discards_zombie_feed(monkeypatch):
 
 
 def test_fetch_news_keeps_fresh_feed(monkeypatch):
-    now = datetime.now()
+    now = news._now_bj()
     fresh = _rss(_item("刚刚发布", "https://example.com/today", _rfc822(now - timedelta(hours=2))))
     _patch_source(monkeypatch, "活跃网", "https://example.com/rss.xml", fresh)
     items = news.fetch_news()
@@ -127,7 +149,7 @@ def test_fetch_news_returns_empty_on_broken_xml(monkeypatch):
 
 def test_fetch_news_uses_cache_within_ttl(monkeypatch):
     """抓取免费但没必要每次提问都抓——缓存期内不再发第二次请求。"""
-    now = datetime.now()
+    now = news._now_bj()
     fresh = _rss(_item("缓存命中", "https://example.com/today", _rfc822(now - timedelta(hours=1))))
     calls = []
 
@@ -157,7 +179,7 @@ def test_format_news_empty_returns_empty_string():
 
 
 def test_search_news_matches_chinese_by_bigram(monkeypatch):
-    now = datetime.now()
+    now = news._now_bj()
     content = _rss(
         _item("运载火箭发射成功", "https://example.com/a", _rfc822(now)),
         _item("农产品价格指数下降", "https://example.com/b", _rfc822(now)),
@@ -168,7 +190,7 @@ def test_search_news_matches_chinese_by_bigram(monkeypatch):
 
 
 def test_search_news_returns_empty_for_unrelated_query(monkeypatch):
-    now = datetime.now()
+    now = news._now_bj()
     _patch_source(
         monkeypatch, "活跃网", "https://example.com/rss.xml", _rss(_item("火箭发射", "https://e.com/a", _rfc822(now)))
     )
