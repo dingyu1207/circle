@@ -99,6 +99,8 @@ Circle 是这个假设的落地验证。它不做全能助理，只在几个生�
 | **单模型（DeepSeek）起步** | 聚焦，先验证产品而非引擎 | 存在单点依赖 → 后续评估多 provider |
 
 > 这一节是我的"PRD 复盘"：**每个取舍都记下了理由和代价**。面试官想看的不是"我全会做"，而是"我知道自己在放弃什么"。
+>
+> 面向公开上线的完整版见 **[docs/PRD.md](docs/PRD.md)**（目标与北极星 / 优先级方法与依据 / 上线门槛 / 明确不做 / 风险与依赖）。
 
 ---
 
@@ -230,6 +232,7 @@ app.py / config.py          # 后端主逻辑与可调参数
 tools/                      # news（官方媒体 RSS + 新鲜度闸门）、web_fetch（URL 抓取/读全文）
 knowledge/                  # 4 大场景知识库（cooking/cleaning/health/finance）
 eval/                       # 评测体系：rubric + 评测集 + 检索开/关对比引擎（dry-run 可验证）
+docs/PRD.md                 # v1.0 公开上线 PRD（含上线门槛与验收标准）
 memory/  sessions/  feedback/  cost/   # 本地数据（均已 gitignore）
 tests/                      # 79 个测试
 templates/index.html        # 单页前端
